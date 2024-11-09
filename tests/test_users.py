@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pytest
 from sqlalchemy.exc import IntegrityError
 
@@ -9,6 +11,9 @@ def test_create_new_user(session, user):
     session.refresh(user)
 
     assert user.id == 1
+    assert isinstance(user.username, str)
+    assert isinstance(user.created_at, datetime)
+    assert isinstance(user.updated_at, datetime)
 
 
 def test_if_user_has_unique_constraint(session, user, duplicated_user):

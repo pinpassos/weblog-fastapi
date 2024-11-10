@@ -14,6 +14,7 @@ def test_create_new_user(session, user):
     assert isinstance(user.username, str)
     assert isinstance(user.created_at, datetime)
     assert isinstance(user.updated_at, datetime)
+    assert isinstance(user.posts, list)
 
 
 def test_if_user_has_unique_constraint(session, user, duplicated_user):

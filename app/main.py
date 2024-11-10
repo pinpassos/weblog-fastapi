@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 
-from .routers.healthcheck import router
+from .healthcheck import healthcheck_router
+from .users.routers import user_router
 
-app = FastAPI()
-app.include_router(router=router, prefix="/healthcheck", include_in_schema=False)
+app = FastAPI(title="Weblog - Back-end")
+
+app.include_router(router=healthcheck_router, prefix="/healthcheck", include_in_schema=False)
+app.include_router(router=user_router, prefix="/users", include_in_schema=True)

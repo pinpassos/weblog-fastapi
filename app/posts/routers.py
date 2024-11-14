@@ -13,13 +13,13 @@ from app.settings.database import async_session
 from app.users.manager import current_active_user
 from app.users.models import User
 
-post_router = APIRouter()
-categories_router = APIRouter()
+post_router = APIRouter(tags=["posts"])
+categories_router = APIRouter(tags=["routers"])
 SessionAsync = Annotated[AsyncSession, Depends(async_session)]
 CurrentUser = Annotated[User, Depends(current_active_user)]
 
 
-@post_router.get(path="/", tags=["posts"], response_model=List[PostSchema])
+@post_router.get(path="/", response_model=List[PostSchema])
 async def get_all_posts(session: SessionAsync):
 
     select_all_posts = await session.execute(
@@ -28,7 +28,7 @@ async def get_all_posts(session: SessionAsync):
     return select_all_posts.scalars().all()
 
 
-@post_router.get(path="/{post_id}", tags=["posts"], response_model=PostSchema)
+@post_router.get(path="/{post_id}", response_model=PostSchema)
 async def get_post(post_id: int, session: SessionAsync):
 
     get_post = await session.execute(
@@ -46,7 +46,7 @@ async def get_post(post_id: int, session: SessionAsync):
     return post
 
 
-@post_router.post(path="/", tags=["posts"], response_model=PostSchema)
+@post_router.post(path="/", response_model=PostSchema)
 async def create_post(user: CurrentUser, post: CreatePostSchema, session: SessionAsync):
 
     new_post = Post(
@@ -71,7 +71,7 @@ async def create_post(user: CurrentUser, post: CreatePostSchema, session: Sessio
         return new_post
 
 
-@post_router.patch(path="/{post_id}", tags=["posts"], response_model=PostSchema)
+@post_router.patch(path="/{post_id}", response_model=PostSchema)
 async def update_post(user: CurrentUser, post_id: int, post_data: UpdatePostSchema, session: SessionAsync):
 
     data_to_update = post_data.model_dump(exclude_unset=True)
@@ -134,7 +134,7 @@ async def delete_post(user: CurrentUser, post_id: int, session: SessionAsync):
         return f"Post {post_id} has been deleted"
 
 
-@categories_router.get(path="/", tags=["categories"], response_model=List[CategorySchema])
+@categories_router.get(path="/", response_model=List[CategorySchema])
 async def get_all_categories(user: CurrentUser, session: SessionAsync):
     get_categories = await session.execute(
         select(Category)
@@ -142,7 +142,7 @@ async def get_all_categories(user: CurrentUser, session: SessionAsync):
     return get_categories.scalars().all()
 
 
-@categories_router.get(path="/{category_id}", tags=["categories"], response_model=CategorySchema)
+@categories_router.get(path="/{category_id}", response_model=CategorySchema)
 async def get_category(user: CurrentUser, category_id: int, session: SessionAsync):
     get_category = await session.execute(
         select(Category).where(Category.id == category_id)
@@ -159,7 +159,7 @@ async def get_category(user: CurrentUser, category_id: int, session: SessionAsyn
     return category
 
 
-@categories_router.post(path="/", tags=["categories"], response_model=CategorySchema)
+@categories_router.post(path="/", response_model=CategorySchema)
 async def create_category(user: CurrentUser, category: CreateCategorySchema, session: SessionAsync):
     category_to_create = Category(
         name=category.name,
@@ -180,7 +180,7 @@ async def create_category(user: CurrentUser, category: CreateCategorySchema, ses
         return category_to_create
 
 
-@categories_router.patch(path="/{category_id}", tags=["categories"], response_model=CategorySchema)
+@categories_router.patch(path="/{category_id}", response_model=CategorySchema)
 async def update_category(user: CurrentUser, category_id: int, category_data: UpdateCategorySchema, session: SessionAsync):
 
     data_to_update = category_data.model_dump(exclude_unset=True)
@@ -217,7 +217,7 @@ async def update_category(user: CurrentUser, category_id: int, category_data: Up
         return category
 
 
-@categories_router.delete(path="/{category_id}", tags=["categories"], response_model=str)
+@categories_router.delete(path="/{category_id}", response_model=str)
 async def delete_category(user: CurrentUser, category_id: int, session: SessionAsync):
     get_category = await session.execute(
         select(Category).where(Category.id == category_id)

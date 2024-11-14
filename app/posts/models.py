@@ -20,9 +20,9 @@ class Post(Base):
     summary: Mapped[str] = mapped_column(Text)
     content: Mapped[str] = mapped_column(Text)
     slug: Mapped[str] = mapped_column(String(150), unique=True)
-    author = relationship("User", back_populates="posts")
+    author = relationship("User", back_populates="posts", lazy="selectin")
     author_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    categories: Mapped[List["Category"]] = relationship(back_populates="posts", secondary=post_category_association)
+    categories: Mapped[List["Category"]] = relationship(back_populates="posts", secondary=post_category_association, lazy="selectin")
 
 
 class Category(Base):
@@ -32,4 +32,4 @@ class Category(Base):
     name: Mapped[str] = mapped_column(String(80), unique=True)
     description: Mapped[str] = mapped_column(String(100))
     is_active: Mapped[bool] = mapped_column(default=True)
-    posts: Mapped[List["Post"]] = relationship(back_populates="categories", secondary=post_category_association)
+    posts: Mapped[List["Post"]] = relationship(back_populates="categories", secondary=post_category_association, lazy="selectin")

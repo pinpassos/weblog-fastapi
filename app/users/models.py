@@ -14,7 +14,7 @@ from app.settings.database import Base, async_session
 class User(SQLAlchemyBaseUserTable[int], Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
-    posts: Mapped[List["Post"]] = relationship(back_populates="author")
+    posts: Mapped[List["Post"]] = relationship(back_populates="author", lazy="selectin")
     created_at: Mapped[datetime] = mapped_column(default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now(), nullable=False)
 

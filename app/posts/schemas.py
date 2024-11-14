@@ -1,5 +1,27 @@
-from app.users.schemas import UserRead
+from typing import List, Optional
+
 from pydantic import BaseModel
+
+from app.users.schemas import UserRead
+
+
+class CategorySchema(BaseModel):
+    id: int
+    name: str
+    description: str
+    is_active: bool
+
+
+class CreateCategorySchema(BaseModel):
+    name: str
+    description: str
+    is_active: Optional[bool]
+
+
+class UpdateCategorySchema(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class PostSchema(BaseModel):
@@ -9,7 +31,7 @@ class PostSchema(BaseModel):
     content: str
     slug: str
     author: UserRead
-    categories: list | None = []  # TODO: Change to Category schema
+    categories: List[CategorySchema]
 
 
 class CreatePostSchema(BaseModel):
@@ -17,12 +39,12 @@ class CreatePostSchema(BaseModel):
     summary: str
     content: str
     slug: str
-    categories: list | None = []  # TODO: Change to Category schema
+    categories: List[CategorySchema]
 
 
 class UpdatePostSchema(BaseModel):
-    title: str | None = None
-    summary: str | None = None
-    content: str | None = None
-    slug: str | None = None
-    categories: list | None = []  # TODO: Change to Category schema
+    title: Optional[str] = None
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    slug: Optional[str] = None
+    categories: List[CategorySchema]

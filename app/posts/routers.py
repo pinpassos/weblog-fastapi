@@ -5,18 +5,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.posts.models import Post
-from app.posts.schemas import CreatePostSchema, PostSchema, UpdatePostSchema
+from app.posts.models import Category, Post
+from app.posts.schemas import (CategorySchema, CreateCategorySchema,
+                               CreatePostSchema, PostSchema,
+                               UpdateCategorySchema, UpdatePostSchema)
 from app.settings.database import async_session
 from app.users.manager import current_active_user
 from app.users.models import User
 
-post_router = APIRouter()
+post_router = APIRouter(tags=["posts"])
+categories_router = APIRouter(tags=["routers"])
 SessionAsync = Annotated[AsyncSession, Depends(async_session)]
 CurrentUser = Annotated[User, Depends(current_active_user)]
 
 
-@post_router.get(path="/", tags=["posts"], response_model=List[PostSchema])
+@post_router.get(path="/", response_model=List[PostSchema])
 async def get_all_posts(session: SessionAsync):
 
     select_all_posts = await session.execute(
@@ -25,7 +28,7 @@ async def get_all_posts(session: SessionAsync):
     return select_all_posts.scalars().all()
 
 
-@post_router.get(path="/{post_id}", tags=["posts"], response_model=PostSchema)
+@post_router.get(path="/{post_id}", response_model=PostSchema)
 async def get_post(post_id: int, session: SessionAsync):
 
     get_post = await session.execute(
@@ -43,7 +46,7 @@ async def get_post(post_id: int, session: SessionAsync):
     return post
 
 
-@post_router.post(path="/", tags=["posts"], response_model=PostSchema)
+@post_router.post(path="/", response_model=PostSchema)
 async def create_post(user: CurrentUser, post: CreatePostSchema, session: SessionAsync):
 
     new_post = Post(
@@ -68,7 +71,7 @@ async def create_post(user: CurrentUser, post: CreatePostSchema, session: Sessio
         return new_post
 
 
-@post_router.patch(path="/{post_id}", tags=["posts"], response_model=PostSchema)
+@post_router.patch(path="/{post_id}", response_model=PostSchema)
 async def update_post(user: CurrentUser, post_id: int, post_data: UpdatePostSchema, session: SessionAsync):
 
     data_to_update = post_data.model_dump(exclude_unset=True)
@@ -105,7 +108,7 @@ async def update_post(user: CurrentUser, post_id: int, post_data: UpdatePostSche
         return post
 
 
-@post_router.delete(path="/{post_id}", tags=["posts"], response_model=int)
+@post_router.delete(path="/{post_id}", tags=["posts"], response_model=str)
 async def delete_post(user: CurrentUser, post_id: int, session: SessionAsync):
 
     get_post = await session.execute(
@@ -131,26 +134,110 @@ async def delete_post(user: CurrentUser, post_id: int, session: SessionAsync):
         return f"Post {post_id} has been deleted"
 
 
-# @post_router.get(path="", description="Get all categories")
-# def get_all_categories():
-#     pass
+@categories_router.get(path="/", response_model=List[CategorySchema])
+async def get_all_categories(user: CurrentUser, session: SessionAsync):
+    get_categories = await session.execute(
+        select(Category)
+    )
+    return get_categories.scalars().all()
 
 
-# @post_router.get(path="", description="Get category")
-# def get_category():
-#     pass
+@categories_router.get(path="/{category_id}", response_model=CategorySchema)
+async def get_category(user: CurrentUser, category_id: int, session: SessionAsync):
+    get_category = await session.execute(
+        select(Category).where(Category.id == category_id)
+    )
+
+    category = get_category.scalar()
+
+    if not category:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Category not found"
+        )
+
+    return category
 
 
-# @post_router.post(description="Create new category")
-# def create_category():
-#     pass
+@categories_router.post(path="/", response_model=CategorySchema)
+async def create_category(user: CurrentUser, category: CreateCategorySchema, session: SessionAsync):
+    category_to_create = Category(
+        name=category.name,
+        description=category.description,
+        is_active=category.is_active
+    )
+
+    try:
+        session.add(category_to_create)
+        await session.commit()
+        await session.refresh(category_to_create)
+    except Exception as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    else:
+        return category_to_create
 
 
-# @post_router.patch(description="Update category")
-# def update_category():
-#     pass
+@categories_router.patch(path="/{category_id}", response_model=CategorySchema)
+async def update_category(user: CurrentUser, category_id: int, category_data: UpdateCategorySchema, session: SessionAsync):
+
+    data_to_update = category_data.model_dump(exclude_unset=True)
+    if not data_to_update:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail="At least one valid field must be provided for update"
+        )
+
+    get_category = await session.execute(
+        select(Category).where(Category.id == category_id)
+    )
+
+    category = get_category.scalar()
+
+    if not category:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Category not found"
+        )
+
+    for key, value in data_to_update.items():
+        setattr(category, key, value)
+
+    try:
+        session.add(category)
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    else:
+        return category
 
 
-# @post_router.delete(description="Delete category")
-# def delete_category():
-#     pass
+@categories_router.delete(path="/{category_id}", response_model=str)
+async def delete_category(user: CurrentUser, category_id: int, session: SessionAsync):
+    get_category = await session.execute(
+        select(Category).where(Category.id == category_id)
+    )
+
+    category = get_category.scalar()
+
+    if not category:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail="Category not found"
+        )
+
+    try:
+        await session.delete(category)
+        await session.commit()
+    except Exception as e:
+        raise HTTPException(
+            status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred: {str(e)}"
+        )
+    else:
+        return f"Category {category_id} has been deleted"

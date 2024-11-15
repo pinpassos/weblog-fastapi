@@ -49,13 +49,20 @@ async def get_post(post_id: int, session: SessionAsync):
 @post_router.post(path="/", response_model=PostSchema)
 async def create_post(user: CurrentUser, post: CreatePostSchema, session: SessionAsync):
 
+    categories = post.categories
+    if categories:
+        get_categories = await session.execute(
+            select(Category).filter(Category.id.in_(categories))
+        )
+        categories = get_categories.scalars().all()
+
     new_post = Post(
         title=post.title,
         summary=post.summary,
         content=post.content,
         slug=post.slug,
         author=user,
-        categories=post.categories,
+        categories=categories,
     )
 
     try:
@@ -91,6 +98,14 @@ async def update_post(user: CurrentUser, post_id: int, post_data: UpdatePostSche
             status_code=HTTPStatus.NOT_FOUND,
             detail="Post not found"
         )
+
+    post_categories_to_update = post_data.categories
+    if post_categories_to_update:
+        post_categories_to_update += post.categories
+        get_categories = await session.execute(
+            select(Category).filter(Category.id.in_(post_categories_to_update))
+        )
+        data_to_update["categories"] = get_categories.scalars().all()
 
     for key, value in data_to_update.items():
         setattr(post, key, value)

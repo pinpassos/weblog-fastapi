@@ -39,7 +39,7 @@ class CreatePostSchema(BaseModel):
     summary: str
     content: str
     slug: str
-    categories: List[CategorySchema]
+    categories: List
 
 
 class UpdatePostSchema(BaseModel):
@@ -47,4 +47,4 @@ class UpdatePostSchema(BaseModel):
     summary: Optional[str] = None
     content: Optional[str] = None
     slug: Optional[str] = None
-    categories: List[CategorySchema]
+    categories: List
